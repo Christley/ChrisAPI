@@ -229,6 +229,7 @@ public class HttpServerPlugin extends Plugin
 			object.addProperty("Logged in", loggedIn);
 			object.addProperty("Current health", client.getBoostedSkillLevel(Skill.HITPOINTS));
 			object.addProperty("Current prayer points", client.getBoostedSkillLevel(Skill.PRAYER));
+			object.addProperty("Current weight", client.getWeight());
 			object.addProperty("Interacting code", String.valueOf(player.getInteracting()));
 			object.addProperty("NPC name", npcName);
 			object.addProperty("NPC health ", minHealth);
