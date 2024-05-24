@@ -152,7 +152,7 @@ public class HttpServerPlugin extends Plugin
 				object.addProperty("stat", skill.getName());
 				object.addProperty("level", realLevel);
 				object.addProperty("boosted Level", boostedLevel);
-				object.addProperty("boosted Amount", boostedLevel);
+				object.addProperty("boosted Amount", boostedVsLevel);
 				object.addProperty("xp", client.getSkillExperience(skill));
 				object.addProperty("xp gained", String.valueOf(xp_gained_skills[skill_count]));
 				skills.add(object);
