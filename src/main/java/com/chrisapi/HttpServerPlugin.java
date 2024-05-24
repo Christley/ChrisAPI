@@ -10,7 +10,6 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -52,6 +51,9 @@ public class HttpServerPlugin extends Plugin
 	public ClientThread clientThread;
 	public HttpServer server;
 	public String msg;
+	private QuestState[] lastQuestStates;
+	private final Quest[] quests = Quest.values();
+
 	@Provides
 	private HttpServerConfig provideConfig(ConfigManager configManager)
 	{
@@ -89,6 +91,7 @@ public class HttpServerPlugin extends Plugin
 		server.stop(1);
 		log.info("HTTP server stopped");
 	}
+
 	public Client getClient() {
 		return client;
 	}
@@ -113,6 +116,7 @@ public class HttpServerPlugin extends Plugin
 			skill_count++;
 		}
 		tickCount++;
+		detectQuestEvents(); // Detect quest events on each game tick
 	}
 
 	public int handleTracker(Skill skill)
@@ -181,8 +185,6 @@ public class HttpServerPlugin extends Plugin
 					{
 						if (npcHealth2 > 1)
 						{
-							// This doesn't apply if healthRatio = 1, because of the special case in the server calculation that
-							// health = 0 forces healthRatio = 0 instead of the expected healthRatio = 1
 							minHealth = (npcHealth * (npcHealth2 - 1) + npcHealth - 2) / (npcHealth - 1);
 						}
 						maxHealth = (npcHealth * npcHealth2 - 1) / (npcHealth - 1);
@@ -212,6 +214,7 @@ public class HttpServerPlugin extends Plugin
 			int processedEnergy = energy != 0 ? energy / 100 : 0;
 			List<Integer> idlePoses = Arrays.asList(808, 813, 3418, 10075);
 			boolean isIdle = player.getAnimation() == -1 && idlePoses.contains(player.getPoseAnimation());
+			boolean loggedIn = client.getGameState() == GameState.LOGGED_IN;
 			JsonObject object = new JsonObject();
 			JsonObject camera = new JsonObject();
 			JsonObject worldPoint = new JsonObject();
@@ -222,6 +225,7 @@ public class HttpServerPlugin extends Plugin
 			object.addProperty("Last chat message", msg);
 			object.addProperty("Run energy", processedEnergy);
 			object.addProperty("Game tick", client.getGameCycle());
+			object.addProperty("Logged in", loggedIn);
 			object.addProperty("Current health", client.getBoostedSkillLevel(Skill.HITPOINTS));
 			object.addProperty("Interacting code", String.valueOf(player.getInteracting()));
 			object.addProperty("NPC name", npcName);
@@ -250,9 +254,6 @@ public class HttpServerPlugin extends Plugin
 		}
 	}
 
-	private QuestState[] lastQuestStates;
-	private final Quest[] quests = Quest.values();
-
 	private void populateCurrentQuests()
 	{
 		clientThread.invokeLater(() -> {
@@ -265,7 +266,15 @@ public class HttpServerPlugin extends Plugin
 		});
 	}
 
-
+	private void detectQuestEvents()
+	{
+		clientThread.invokeLater(() -> {
+			for (int i = 0; i < quests.length; i++)
+			{
+				lastQuestStates[i] = quests[i].getState(client);
+			}
+		});
+	}
 
 	public void handleQuests(HttpExchange exchange) throws IOException
 	{
