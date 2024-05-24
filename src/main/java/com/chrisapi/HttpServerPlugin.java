@@ -22,6 +22,7 @@ import net.runelite.api.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.http.api.RuneLiteAPI;
@@ -49,6 +50,8 @@ public class HttpServerPlugin extends Plugin
 	public HttpServerConfig config;
 	@Inject
 	public ClientThread clientThread;
+	@Inject
+	private ItemManager itemManager;
 	public HttpServer server;
 	public String msg;
 	private QuestState[] lastQuestStates;
@@ -314,6 +317,7 @@ public class HttpServerPlugin extends Plugin
 		return exchange -> {
 			Item[] items = invokeAndWait(() -> {
 				ItemContainer itemContainer = client.getItemContainer(inventoryID);
+
 				if (itemContainer != null)
 				{
 					return itemContainer.getItems();
@@ -327,13 +331,33 @@ public class HttpServerPlugin extends Plugin
 				return;
 			}
 
+			JsonArray jsonArray = new JsonArray();
+			for (Item item : items)
+			{
+				JsonObject jsonObject = new JsonObject();
+				jsonObject.addProperty("id", item.getId());
+				if (item.getId() != -1)
+				{
+					String itemName = invokeAndWait(() -> itemManager.getItemComposition(item.getId()).getName());
+					jsonObject.addProperty("name", itemName);
+				}
+				else
+				{
+					jsonObject.addProperty("name", "Unknown");
+				}
+				jsonObject.addProperty("quantity", item.getQuantity());
+				jsonArray.add(jsonObject);
+			}
+
 			exchange.sendResponseHeaders(200, 0);
 			try (OutputStreamWriter out = new OutputStreamWriter(exchange.getResponseBody()))
 			{
-				RuneLiteAPI.GSON.toJson(items, out);
+				RuneLiteAPI.GSON.toJson(jsonArray, out);
 			}
 		};
 	}
+
+
 
 	private <T> T invokeAndWait(Callable<T> r)
 	{

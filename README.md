@@ -8,9 +8,11 @@ http://localhost:8081/stats
 
 http://localhost:8081/events
 
-http://localhost:8081/inv
+http://localhost:8081/inventory
 
-http://localhost:8081/equip
+http://localhost:8081/equipment
+
+http://localhost:8081/quests
 
 # Stats:
 
@@ -37,6 +39,13 @@ http://localhost:8081/equip
 - Shows your camera position.
 - Shows where your mouse is located in the game.
 - Max distance which affects what is displayed on objects/doors
+
+# Inventory:
+
+- Shows which items are in your inventory
+- Shows ID of the item
+- Shows the name of the item
+- Shows the quantity of the item
 
 # Quests
 
