@@ -81,7 +81,7 @@ public class HttpServerPlugin extends Plugin
 			xp_gained_skills[skill_count] = 0;
 			skill_count++;
 		}
-		log.info("HTTP server started on port 8081");
+		log.info("HTTP server started on port " + config.portNum());
 	}
 
 	@Override
