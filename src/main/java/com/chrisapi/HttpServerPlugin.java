@@ -225,7 +225,7 @@ public class HttpServerPlugin extends Plugin
 			object.addProperty("latest msg", msg);
 			object.addProperty("run energy", processedEnergy);
 			object.addProperty("game tick", client.getGameCycle());
-			object.addProperty("health", client.getBoostedSkillLevel(Skill.HITPOINTS) + "/" + client.getRealSkillLevel(Skill.HITPOINTS));
+			object.addProperty("health", client.getBoostedSkillLevel(Skill.HITPOINTS));
 			object.addProperty("interacting code", String.valueOf(player.getInteracting()));
 			object.addProperty("npc name", npcName);
 			object.addProperty("npc health ", minHealth);
