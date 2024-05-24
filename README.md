@@ -34,3 +34,7 @@ http://localhost:8081/equip
 - Shows your camera position.
 - Shows where your mouse is located in the game.
 - Max distance which affects what is displayed on objects/doors
+
+# Quests
+
+- Shows quest status, like FINISHED, NOT_STARTED or IN_PROGRESS for each quest

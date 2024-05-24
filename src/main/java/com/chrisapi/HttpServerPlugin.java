@@ -26,6 +26,8 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.http.api.RuneLiteAPI;
+import net.runelite.api.Quest;
+import net.runelite.api.QuestState;
 
 @PluginDescriptor(
 		name = "Chris API",
@@ -66,6 +68,7 @@ public class HttpServerPlugin extends Plugin
 		server.createContext("/inv", handlerForInv(InventoryID.INVENTORY));
 		server.createContext("/equip", handlerForInv(InventoryID.EQUIPMENT));
 		server.createContext("/events", this::handleEvents);
+		server.createContext("/quests", this::handleQuests);
 		server.setExecutor(Executors.newCachedThreadPool()); // Use multi-threaded executor
 		startTime = System.currentTimeMillis();
 		xp_gained_skills = new int[Skill.values().length];
@@ -77,6 +80,7 @@ public class HttpServerPlugin extends Plugin
 			skill_count++;
 		}
 		log.info("HTTP server started on port " + config.portNum());
+		populateCurrentQuests();
 	}
 
 	@Override
@@ -244,6 +248,54 @@ public class HttpServerPlugin extends Plugin
 				RuneLiteAPI.GSON.toJson(object, out);
 			}
 		}
+	}
+
+	private QuestState[] lastQuestStates;
+	private final Quest[] quests = Quest.values();
+
+	private void populateCurrentQuests()
+	{
+		clientThread.invokeLater(() -> {
+			lastQuestStates = new QuestState[quests.length];
+			for (int i = 0; i < quests.length; i++)
+			{
+				QuestState currentQuestState = quests[i].getState(client);
+				lastQuestStates[i] = currentQuestState;
+			}
+		});
+	}
+
+
+
+	public void handleQuests(HttpExchange exchange) throws IOException
+	{
+		clientThread.invokeLater(() -> {
+			synchronized (this) { // Ensure thread safety
+				JsonArray questsArray = new JsonArray();
+				for (Quest quest : quests)
+				{
+					JsonObject questObject = new JsonObject();
+					questObject.addProperty("name", quest.getName());
+					QuestState state = quest.getState(client);
+					questObject.addProperty("state", state.name());
+					questsArray.add(questObject);
+				}
+
+				try {
+					exchange.sendResponseHeaders(200, 0);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+				try (OutputStreamWriter out = new OutputStreamWriter(exchange.getResponseBody()))
+				{
+					RuneLiteAPI.GSON.toJson(questsArray, out);
+				}
+				catch (IOException e)
+				{
+					log.error("Error writing quests response", e);
+				}
+			}
+		});
 	}
 
 	private HttpHandler handlerForInv(InventoryID inventoryID)
