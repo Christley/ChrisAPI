@@ -124,8 +124,7 @@ public class HttpServerPlugin extends Plugin
 	{
 		int startingSkillXp = xpTracker.getXpData(skill, 0);
 		int endingSkillXp = xpTracker.getXpData(skill, tickCount);
-		int xpGained = endingSkillXp - startingSkillXp;
-		return xpGained;
+		return endingSkillXp - startingSkillXp;
 	}
 
 	public void handleStats(HttpExchange exchange) throws IOException
