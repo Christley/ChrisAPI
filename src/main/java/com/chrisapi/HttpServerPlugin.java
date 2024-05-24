@@ -145,10 +145,14 @@ public class HttpServerPlugin extends Plugin
 				{
 					continue;
 				}
+				int realLevel = client.getRealSkillLevel(skill);
+				int boostedLevel = client.getBoostedSkillLevel(skill);
+				int boostedVsLevel = boostedLevel - realLevel;
 				JsonObject object = new JsonObject();
 				object.addProperty("stat", skill.getName());
-				object.addProperty("level", client.getRealSkillLevel(skill));
-				object.addProperty("boostedLevel", client.getBoostedSkillLevel(skill));
+				object.addProperty("level", realLevel);
+				object.addProperty("boosted Level", boostedLevel);
+				object.addProperty("boosted Amount", boostedLevel);
 				object.addProperty("xp", client.getSkillExperience(skill));
 				object.addProperty("xp gained", String.valueOf(xp_gained_skills[skill_count]));
 				skills.add(object);
@@ -220,15 +224,15 @@ public class HttpServerPlugin extends Plugin
 			JsonObject camera = new JsonObject();
 			JsonObject worldPoint = new JsonObject();
 			JsonObject mouse = new JsonObject();
-			object.addProperty("animation", player.getAnimation());
-			object.addProperty("animation pose", player.getPoseAnimation());
-			object.addProperty("latest msg", msg);
-			object.addProperty("run energy", processedEnergy);
-			object.addProperty("game tick", client.getGameCycle());
-			object.addProperty("health", client.getBoostedSkillLevel(Skill.HITPOINTS));
-			object.addProperty("interacting code", String.valueOf(player.getInteracting()));
-			object.addProperty("npc name", npcName);
-			object.addProperty("npc health ", minHealth);
+			object.addProperty("Animation ID", player.getAnimation());
+			object.addProperty("Animation pose", player.getPoseAnimation());
+			object.addProperty("Last chat message", msg);
+			object.addProperty("Run energy", processedEnergy);
+			object.addProperty("Game tick", client.getGameCycle());
+			object.addProperty("Current health", client.getBoostedSkillLevel(Skill.HITPOINTS));
+			object.addProperty("Interacting code", String.valueOf(player.getInteracting()));
+			object.addProperty("NPC name", npcName);
+			object.addProperty("NPC health ", minHealth);
 			object.addProperty("MAX_DISTANCE", MAX_DISTANCE);
 			mouse.addProperty("x", client.getMouseCanvasPosition().getX());
 			mouse.addProperty("y", client.getMouseCanvasPosition().getY());
