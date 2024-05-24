@@ -11,7 +11,7 @@ http://localhost:8081/inv
 
 http://localhost:8081/equip
 
-# Stats Endpoint:
+# Stats:
 
 - Shows login, account hash and username.
 - Shows current skill level.
