@@ -149,12 +149,12 @@ public class HttpServerPlugin extends Plugin
 				int boostedLevel = client.getBoostedSkillLevel(skill);
 				int boostedVsLevel = boostedLevel - realLevel;
 				JsonObject object = new JsonObject();
-				object.addProperty("stat", skill.getName());
-				object.addProperty("level", realLevel);
-				object.addProperty("boosted Level", boostedLevel);
-				object.addProperty("boosted Amount", boostedVsLevel);
-				object.addProperty("xp", client.getSkillExperience(skill));
-				object.addProperty("xp gained", String.valueOf(xp_gained_skills[skill_count]));
+				object.addProperty("Skill", skill.getName());
+				object.addProperty("Level", realLevel);
+				object.addProperty("Boosted level", boostedLevel);
+				object.addProperty("Boosted amount", boostedVsLevel);
+				object.addProperty("XP", client.getSkillExperience(skill));
+				object.addProperty("Xp gained", String.valueOf(xp_gained_skills[skill_count]));
 				skills.add(object);
 				skill_count++;
 			}
