@@ -6,7 +6,7 @@ import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
 
 @ConfigGroup("chrisapi")
-public interface HttpServerConfig extends Config
+public interface ChrisAPIConfig extends Config
 {
 	@ConfigItem(
 			keyName = "PortNum",
