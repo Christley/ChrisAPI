@@ -125,8 +125,8 @@ public class HttpServerPlugin extends Plugin
 			Player player = client.getLocalPlayer();
 			JsonArray skills = new JsonArray();
 			JsonObject headers = new JsonObject();
-			headers.addProperty("account hash", client.getAccountHash());
-			headers.addProperty("player name", player.getName());
+			headers.addProperty("Account hash", client.getAccountHash());
+			headers.addProperty("Player name", player.getName());
 			int skill_count = 0;
 			skills.add(headers);
 			for (Skill skill : Skill.values())
@@ -140,7 +140,7 @@ public class HttpServerPlugin extends Plugin
 				object.addProperty("Boosted level", boostedLevel);
 				object.addProperty("Boosted amount", boostedVsLevel);
 				object.addProperty("XP", client.getSkillExperience(skill));
-				object.addProperty("Xp gained", String.valueOf(xp_gained_skills[skill_count]));
+				object.addProperty("XP gained", String.valueOf(xp_gained_skills[skill_count]));
 				skills.add(object);
 				skill_count++;
 			}
@@ -219,7 +219,6 @@ public class HttpServerPlugin extends Plugin
 			object.addProperty("Interacting code", String.valueOf(player.getInteracting()));
 			object.addProperty("NPC name", npcName);
 			object.addProperty("NPC health ", minHealth);
-			object.addProperty("MAX_DISTANCE", MAX_DISTANCE);
 			mouse.addProperty("x", client.getMouseCanvasPosition().getX());
 			mouse.addProperty("y", client.getMouseCanvasPosition().getY());
 			worldPoint.addProperty("x", player.getWorldLocation().getX());
