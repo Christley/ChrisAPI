@@ -1,7 +1,8 @@
 # Crispy API
 Exposes data to localhost on a configurable port. For building dashboards or pretty websites during tournaments and similar.
 
-Example endpoints:
+### Example endpoints:
+
 http://localhost:8081/stats
 
 http://localhost:8081/events
@@ -10,7 +11,7 @@ http://localhost:8081/inv
 
 http://localhost:8081/equip
 
-# http://localhost:8081/stats
+# Stats Endpoint:
 
 - Shows login, account hash and username.
 - Shows current skill level.
@@ -19,11 +20,15 @@ http://localhost:8081/equip
 - Shows current experience in each skill.
 - Shows XP gained during your login session.
 
-# http://localhost:8080/events
-## Logs:
-- total health and health remaining
-- run energy
-- the animation id useful tracking if interacting with objects
-- if in combat the name of the npc and its health
-- logs world location, local location, camera position and where the mouse is located
+# Events:
+
+- Shows current animation ID and animation pose.
+- Shows the latest chat message.
+- Shows your current run energy.
+- Shows the current game tick.
+- Shows your current health.
+- Shows the name of the NPC and its health if you're in combat.
+- Shows your location in the world.
+- Shows your camera position.
+- Shows where your mouse is located in the game.
 - Max distance which affects what is displayed on objects/doors
