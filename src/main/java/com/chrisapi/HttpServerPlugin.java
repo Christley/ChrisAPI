@@ -65,8 +65,8 @@ public class HttpServerPlugin extends Plugin
 		xpTracker = new XpTracker(this);
 		server = HttpServer.create(new InetSocketAddress(config.portNum()), 0);
 		server.createContext("/stats", this::handleStats);
-		server.createContext("/inv", handlerForInv(InventoryID.INVENTORY));
-		server.createContext("/equip", handlerForInv(InventoryID.EQUIPMENT));
+		server.createContext("/inventory", handlerForInv(InventoryID.INVENTORY));
+		server.createContext("/equipment", handlerForInv(InventoryID.EQUIPMENT));
 		server.createContext("/events", this::handleEvents);
 		server.createContext("/quests", this::handleQuests);
 		server.setExecutor(Executors.newCachedThreadPool()); // Use multi-threaded executor
