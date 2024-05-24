@@ -135,6 +135,7 @@ public class HttpServerPlugin extends Plugin
 			headers.addProperty("Account hash", client.getAccountHash());
 			headers.addProperty("Player name", player.getName());
 			headers.addProperty("Combat level", client.getLocalPlayer().getCombatLevel());
+			headers.addProperty("Current world", client.getWorld());
 			int skill_count = 0;
 			skills.add(headers);
 			for (Skill skill : Skill.values())
@@ -227,6 +228,7 @@ public class HttpServerPlugin extends Plugin
 			object.addProperty("Game tick", client.getGameCycle());
 			object.addProperty("Logged in", loggedIn);
 			object.addProperty("Current health", client.getBoostedSkillLevel(Skill.HITPOINTS));
+			object.addProperty("Current prayer points", client.getBoostedSkillLevel(Skill.PRAYER));
 			object.addProperty("Interacting code", String.valueOf(player.getInteracting()));
 			object.addProperty("NPC name", npcName);
 			object.addProperty("NPC health ", minHealth);

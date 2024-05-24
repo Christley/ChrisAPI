@@ -15,6 +15,7 @@ http://localhost:8081/equip
 
 - Shows login, account hash and username.
 - Shows your combat level.
+- Shows your current logged in world.
 - Shows current skill level.
 - Shows what your boosted skill level is.
 - Shows the difference between your boosted level and normal level.
@@ -29,6 +30,7 @@ http://localhost:8081/equip
 - Shows your current run energy.
 - Shows the current game tick.
 - Shows your current health.
+- Shows your current prayer points.
 - Shows the name of the NPC and its health if you're in combat.
 - Shows your location in the world.
 - Shows your camera position.
