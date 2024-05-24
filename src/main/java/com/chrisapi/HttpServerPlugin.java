@@ -126,6 +126,7 @@ public class HttpServerPlugin extends Plugin
 			JsonObject headers = new JsonObject();
 			headers.addProperty("Account hash", client.getAccountHash());
 			headers.addProperty("Player name", player.getName());
+			headers.addProperty("Combat level", client.getLocalPlayer().getCombatLevel());
 			int skill_count = 0;
 			skills.add(headers);
 			for (Skill skill : Skill.values())

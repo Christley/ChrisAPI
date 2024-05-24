@@ -14,6 +14,7 @@ http://localhost:8081/equip
 # Stats:
 
 - Shows login, account hash and username.
+- Shows your combat level.
 - Shows current skill level.
 - Shows what your boosted skill level is.
 - Shows the difference between your boosted level and normal level.
