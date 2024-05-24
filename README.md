@@ -38,14 +38,20 @@ http://localhost:8081/quests
 - Shows your location in the world.
 - Shows your camera position.
 - Shows where your mouse is located in the game.
-- Max distance which affects what is displayed on objects/doors
 
 # Inventory:
 
-- Shows which items are in your inventory
-- Shows ID of the item
-- Shows the name of the item
-- Shows the quantity of the item
+- Shows which items are in your inventory.
+- Shows ID of the item.
+- Shows the name of the item.
+- Shows the quantity of the item.
+
+# Equipment
+
+- Shows which items are equipped on your character.
+- Shows ID of the item.
+- Shows the name of the item.
+- Shows the quantity of the item.
 
 # Quests
 
