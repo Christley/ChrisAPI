@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.api.widgets.InterfaceID;
+import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -133,10 +135,18 @@ public class ChrisAPIPlugin extends Plugin {
 		@Override
 		public void handle(HttpExchange exchange) throws IOException {
 			JsonObject accountInfo = new JsonObject();
+			Player localPlayer = client.getLocalPlayer();
+			if (localPlayer == null) {
+				log.error("Local player is null");
+				exchange.sendResponseHeaders(500, 0);
+				exchange.close();
+				return;
+			}
+
 			accountInfo.addProperty("Account hash", client.getAccountHash());
-			accountInfo.addProperty("Player name", client.getLocalPlayer().getName());
+			accountInfo.addProperty("Player name", localPlayer.getName());
 			accountInfo.addProperty("Logged in", client.getGameState().name().equals("LOGGED_IN"));
-			accountInfo.addProperty("Combat level", client.getLocalPlayer().getCombatLevel());
+			accountInfo.addProperty("Combat level", localPlayer.getCombatLevel());
 			accountInfo.addProperty("Current world", client.getWorld());
 			accountInfo.addProperty("Current weight", client.getWeight());
 
@@ -160,9 +170,17 @@ public class ChrisAPIPlugin extends Plugin {
 		@Override
 		public void handle(HttpExchange exchange) throws IOException {
 			JsonObject eventsData = new JsonObject();
-			eventsData.addProperty("Animation ID", client.getLocalPlayer().getAnimation());
-			eventsData.addProperty("Animation pose ID", client.getLocalPlayer().getPoseAnimation());
-			boolean isIdle = client.getLocalPlayer().getAnimation() == -1 && idlePoses.contains(client.getLocalPlayer().getPoseAnimation());
+			Player localPlayer = client.getLocalPlayer();
+			if (localPlayer == null) {
+				log.error("Local player is null");
+				exchange.sendResponseHeaders(500, 0);
+				exchange.close();
+				return;
+			}
+
+			eventsData.addProperty("Animation ID", localPlayer.getAnimation());
+			eventsData.addProperty("Animation pose ID", localPlayer.getPoseAnimation());
+			boolean isIdle = localPlayer.getAnimation() == -1 && idlePoses.contains(localPlayer.getPoseAnimation());
 			eventsData.addProperty("Is idle", isIdle);
 
 			synchronized (chatMessages) {
@@ -186,7 +204,7 @@ public class ChrisAPIPlugin extends Plugin {
 			int specialAttack = client.getVarpValue(300) / 10;
 			eventsData.addProperty("Current special attack energy", specialAttack);
 
-			WorldPoint worldLocation = client.getLocalPlayer().getWorldLocation();
+			WorldPoint worldLocation = localPlayer.getWorldLocation();
 			eventsData.addProperty("World location", String.format("X: %d, Y: %d, Plane: %d, RegionID: %d, RegionX: %d, RegionY: %d", worldLocation.getX(), worldLocation.getY(), worldLocation.getPlane(), worldLocation.getRegionID(), worldLocation.getRegionX(), worldLocation.getRegionY()));
 
 			exchange.sendResponseHeaders(200, 0);
@@ -349,7 +367,8 @@ public class ChrisAPIPlugin extends Plugin {
 		public void handle(HttpExchange exchange) throws IOException {
 			clientThread.invokeLater(() -> {
 				JsonObject bankData = new JsonObject();
-				boolean bankOpen = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER) != null;
+				Widget bankWidget = client.getWidget(InterfaceID.BANK, 0); // Using InterfaceID instead of WidgetInfo
+				boolean bankOpen = bankWidget != null && !bankWidget.isHidden();
 				bankData.addProperty("Is bank open", bankOpen);
 
 				if (bankOpen) {
@@ -392,6 +411,13 @@ public class ChrisAPIPlugin extends Plugin {
 		public void handle(HttpExchange exchange) throws IOException {
 			JsonObject combatData = new JsonObject();
 			Player localPlayer = client.getLocalPlayer();
+			if (localPlayer == null) {
+				log.error("Local player is null");
+				exchange.sendResponseHeaders(500, 0);
+				exchange.close();
+				return;
+			}
+
 			Actor opponent = localPlayer.getInteracting();
 
 			if (opponent != null && opponent.getHealthRatio() > 0) {
