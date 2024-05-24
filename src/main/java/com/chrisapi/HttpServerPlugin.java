@@ -11,6 +11,8 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -203,12 +205,15 @@ public class HttpServerPlugin extends Plugin
 			}
 			int energy = client.getEnergy();
 			int processedEnergy = energy != 0 ? energy / 100 : 0;
+			List<Integer> idlePoses = Arrays.asList(808, 813, 3418, 10075);
+			boolean isIdle = player.getAnimation() == -1 && idlePoses.contains(player.getPoseAnimation());
 			JsonObject object = new JsonObject();
 			JsonObject camera = new JsonObject();
 			JsonObject worldPoint = new JsonObject();
 			JsonObject mouse = new JsonObject();
 			object.addProperty("Animation ID", player.getAnimation());
 			object.addProperty("Animation pose", player.getPoseAnimation());
+			object.addProperty("Idling", isIdle);
 			object.addProperty("Last chat message", msg);
 			object.addProperty("Run energy", processedEnergy);
 			object.addProperty("Game tick", client.getGameCycle());
