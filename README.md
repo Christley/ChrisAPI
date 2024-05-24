@@ -1,5 +1,6 @@
 # Chris API
 Exposes data to localhost on a configurable port. For building dashboards or pretty websites during tournaments and similar.
+Spiritual successor to Morg HTTP Client.
 
 ### Example endpoints:
 

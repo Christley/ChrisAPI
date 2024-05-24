@@ -30,8 +30,8 @@ import net.runelite.api.QuestState;
 
 @PluginDescriptor(
 		name = "Chris API",
-		description = "Actively logs the player status to localhost",
-		tags = {"status", "stats"},
+		description = "Actively logs the player status and events to localhost",
+		tags = {"status", "stats", "api"},
 		enabledByDefault = true
 )
 @Slf4j
@@ -100,7 +100,6 @@ public class HttpServerPlugin extends Plugin
 	public void onChatMessage(ChatMessage event)
 	{
 		msg = event.getMessage();
-		// System.out.println("onChatmsg:" + msg);
 	}
 
 	@Subscribe
