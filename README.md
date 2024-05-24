@@ -23,6 +23,7 @@ http://localhost:8081/equip
 # Events:
 
 - Shows current animation ID and animation pose.
+- Shows if you're idling or not.
 - Shows the latest chat message.
 - Shows your current run energy.
 - Shows the current game tick.
