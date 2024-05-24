@@ -1,4 +1,4 @@
-package com.crispyapi;
+package com.chrisapi;
 
 import net.runelite.api.events.ChatMessage;
 import com.google.inject.Provides;
@@ -26,7 +26,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.http.api.RuneLiteAPI;
 
 @PluginDescriptor(
-		name = "Crispy API",
+		name = "Chris API",
 		description = "Actively logs the player status to localhost",
 		tags = {"status", "stats"},
 		enabledByDefault = true
@@ -214,6 +214,8 @@ public class HttpServerPlugin extends Plugin
 				npcHealth2 = 0;
 				health = 0;
 			}
+			int energy = (int) client.getEnergy();
+			int processedEnergy = energy != 0 ? energy / 100 : 0;
 			JsonObject object = new JsonObject();
 			JsonObject camera = new JsonObject();
 			JsonObject worldPoint = new JsonObject();
@@ -221,7 +223,7 @@ public class HttpServerPlugin extends Plugin
 			object.addProperty("animation", player.getAnimation());
 			object.addProperty("animation pose", player.getPoseAnimation());
 			object.addProperty("latest msg", msg);
-			object.addProperty("run energy", client.getEnergy());
+			object.addProperty("run energy", processedEnergy);
 			object.addProperty("game tick", client.getGameCycle());
 			object.addProperty("health", client.getBoostedSkillLevel(Skill.HITPOINTS) + "/" + client.getRealSkillLevel(Skill.HITPOINTS));
 			object.addProperty("interacting code", String.valueOf(player.getInteracting()));

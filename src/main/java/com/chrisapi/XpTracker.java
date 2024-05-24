@@ -1,4 +1,4 @@
-package com.crispyapi;
+package com.chrisapi;
 import net.runelite.api.Skill;
 
 import java.util.ArrayList;

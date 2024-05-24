@@ -1,4 +1,4 @@
-package com.crispyapi;
+package com.chrisapi;
 
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;

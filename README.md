@@ -1,4 +1,4 @@
-# Crispy API
+# Chris API
 Exposes data to localhost on a configurable port. For building dashboards or pretty websites during tournaments and similar.
 
 ### Example endpoints:

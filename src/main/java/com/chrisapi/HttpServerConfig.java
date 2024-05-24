@@ -1,11 +1,11 @@
-package com.crispyapi;
+package com.chrisapi;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
 
-@ConfigGroup("crispyapi")
+@ConfigGroup("chrisapi")
 public interface HttpServerConfig extends Config
 {
 	@ConfigItem(
