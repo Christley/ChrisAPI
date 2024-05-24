@@ -34,12 +34,10 @@ import net.runelite.http.api.RuneLiteAPI;
 @Slf4j
 public class HttpServerPlugin extends Plugin
 {
-	private static final Duration WAIT = Duration.ofSeconds(5);
 	@Inject
 	public Client client;
 	public Skill[] skillList;
 	public XpTracker xpTracker;
-	public Skill mostRecentSkillGained;
 	public int tickCount = 0;
 	public long startTime = 0;
 	public long currentTime = 0;
@@ -49,7 +47,6 @@ public class HttpServerPlugin extends Plugin
 	@Inject
 	public ClientThread clientThread;
 	public HttpServer server;
-	public int MAX_DISTANCE = 1200;
 	public String msg;
 	@Provides
 	private HttpServerConfig provideConfig(ConfigManager configManager)
@@ -204,7 +201,7 @@ public class HttpServerPlugin extends Plugin
 				npcHealth2 = 0;
 				health = 0;
 			}
-			int energy = (int) client.getEnergy();
+			int energy = client.getEnergy();
 			int processedEnergy = energy != 0 ? energy / 100 : 0;
 			JsonObject object = new JsonObject();
 			JsonObject camera = new JsonObject();
