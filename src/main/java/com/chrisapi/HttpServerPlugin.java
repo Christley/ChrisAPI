@@ -1,33 +1,24 @@
 package com.chrisapi;
 
-import net.runelite.api.events.ChatMessage;
 import com.google.inject.Provides;
-import net.runelite.api.events.GameTick;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import java.io.*;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
+import net.runelite.api.Client;
+import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.GameTick;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.http.api.RuneLiteAPI;
-import net.runelite.api.Quest;
-import net.runelite.api.QuestState;
 
 @PluginDescriptor(
 		name = "Chris API",
@@ -36,355 +27,115 @@ import net.runelite.api.QuestState;
 		enabledByDefault = true
 )
 @Slf4j
-public class HttpServerPlugin extends Plugin
-{
+public class HttpServerPlugin extends Plugin {
 	@Inject
-	public Client client;
-	public Skill[] skillList;
-	public XpTracker xpTracker;
-	public int tickCount = 0;
-	public long startTime = 0;
-	public long currentTime = 0;
-	public int[] xp_gained_skills;
+	private Client client;
 	@Inject
-	public HttpServerConfig config;
+	private HttpServerConfig config;
 	@Inject
-	public ClientThread clientThread;
+	private ClientThread clientThread;
 	@Inject
 	private ItemManager itemManager;
-	public HttpServer server;
-	public String msg;
-	private QuestState[] lastQuestStates;
-	private final Quest[] quests = Quest.values();
+	@Inject
+	private EventBus eventBus;
 
-	@Provides
-	private HttpServerConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(HttpServerConfig.class);
-	}
+	private HttpServer server;
+	private final List<BaseContextHandler> contextHandlers = new ArrayList<>();
 
-	@Override
-	protected void startUp() throws Exception
-	{
-		skillList = Skill.values();
-		xpTracker = new XpTracker(this);
-		server = HttpServer.create(new InetSocketAddress(config.portNum()), 0);
-		server.createContext("/stats", this::handleStats);
-		server.createContext("/inventory", handlerForInv(InventoryID.INVENTORY));
-		server.createContext("/equipment", handlerForInv(InventoryID.EQUIPMENT));
-		server.createContext("/events", this::handleEvents);
-		server.createContext("/quests", this::handleQuests);
-		server.setExecutor(Executors.newCachedThreadPool()); // Use multi-threaded executor
-		startTime = System.currentTimeMillis();
-		xp_gained_skills = new int[Skill.values().length];
-		int skill_count = 0;
-		server.start();
-		for (Skill skill : Skill.values())
-		{
-			xp_gained_skills[skill_count] = 0;
-			skill_count++;
-		}
-		log.info("HTTP server started on port " + config.portNum());
-		populateCurrentQuests();
-	}
-
-	@Override
-	protected void shutDown() throws Exception
-	{
-		server.stop(1);
-		log.info("HTTP server stopped");
-	}
+	// Instantiate context handlers
+	private StatsContextHandler statsContextHandler;
+	private MiscStatsContextHandler miscStatsContextHandler;
+	private EventsContextHandler eventsContextHandler;
+	private QuestsContextHandler questsContextHandler;
+	private InventoryContextHandler inventoryContextHandler;
+	private EquipmentContextHandler equipmentContextHandler;
+	private HerbSackContextHandler herbSackContextHandler;
 
 	public Client getClient() {
 		return client;
 	}
 
+	public ClientThread getClientThread() {
+		return clientThread;
+	}
+
+	public ItemManager getItemManager() {
+		return itemManager;
+	}
+
+	@Provides
+	private HttpServerConfig provideConfig(ConfigManager configManager) {
+		return configManager.getConfig(HttpServerConfig.class);
+	}
+
+	@Override
+	protected void startUp() throws Exception {
+		server = HttpServer.create(new InetSocketAddress(config.portNum()), 0);
+
+		// Initialize context handlers
+		statsContextHandler = new StatsContextHandler(this);
+		miscStatsContextHandler = new MiscStatsContextHandler(this);
+		eventsContextHandler = new EventsContextHandler(this);
+		questsContextHandler = new QuestsContextHandler(this);
+		inventoryContextHandler = new InventoryContextHandler(this);
+		equipmentContextHandler = new EquipmentContextHandler(this);
+		herbSackContextHandler = new HerbSackContextHandler(this);
+
+
+
+		contextHandlers.add(statsContextHandler);
+		contextHandlers.add(miscStatsContextHandler);
+		contextHandlers.add(eventsContextHandler);
+		contextHandlers.add(questsContextHandler);
+		contextHandlers.add(inventoryContextHandler);
+		contextHandlers.add(equipmentContextHandler);
+		contextHandlers.add(herbSackContextHandler);
+
+		// Create HTTP contexts
+		for (BaseContextHandler handler : contextHandlers) {
+			server.createContext(handler.getContextPath(), handler.getHttpHandler());
+		}
+
+		server.setExecutor(Executors.newCachedThreadPool());
+		server.start();
+
+		// Register event subscriptions
+		eventBus.register(this);
+		eventBus.register(herbSackContextHandler);
+
+		log.info("HTTP server started on port " + config.portNum());
+	}
+
+	@Override
+	protected void shutDown() throws Exception {
+		server.stop(1);
+
+		// Unregister event subscriptions
+		eventBus.unregister(this);
+		eventBus.unregister(herbSackContextHandler);
+
+		log.info("HTTP server stopped");
+	}
+
+	// Event handling methods
 	@Subscribe
-	public void onChatMessage(ChatMessage event)
-	{
-		msg = event.getMessage();
+	public void onGameTick(GameTick tick) {
+		statsContextHandler.onGameTick(tick);
+		miscStatsContextHandler.onGameTick(tick);
+		eventsContextHandler.onGameTick(tick);
+		questsContextHandler.onGameTick(tick);
+		inventoryContextHandler.onGameTick(tick);
+		equipmentContextHandler.onGameTick(tick);
+		herbSackContextHandler.onGameTick(tick);
 	}
 
 	@Subscribe
-	public void onGameTick(GameTick tick)
-	{
-		currentTime = System.currentTimeMillis();
-		xpTracker.update();
-		int skill_count = 0;
-		for (Skill skill : Skill.values())
-		{
-			int xp_gained = handleTracker(skill);
-			xp_gained_skills[skill_count] = xp_gained;
-			skill_count++;
-		}
-		tickCount++;
-		detectQuestEvents(); // Detect quest events on each game tick
+	public void onVarbitChanged(VarbitChanged event) {
+		miscStatsContextHandler.onVarbitChanged(event);
 	}
 
-	public int handleTracker(Skill skill)
-	{
-		int startingSkillXp = xpTracker.getXpData(skill, 0);
-		int endingSkillXp = xpTracker.getXpData(skill, tickCount);
-		return endingSkillXp - startingSkillXp;
-	}
-
-	public void handleStats(HttpExchange exchange) throws IOException
-	{
-		synchronized (this) { // Ensure thread safety
-			Player player = client.getLocalPlayer();
-			JsonArray skills = new JsonArray();
-			JsonObject headers = new JsonObject();
-			headers.addProperty("Account hash", client.getAccountHash());
-			headers.addProperty("Player name", player.getName());
-			headers.addProperty("Combat level", client.getLocalPlayer().getCombatLevel());
-			headers.addProperty("Current world", client.getWorld());
-			int skill_count = 0;
-			skills.add(headers);
-			for (Skill skill : Skill.values())
-			{
-				int realLevel = client.getRealSkillLevel(skill);
-				int boostedLevel = client.getBoostedSkillLevel(skill);
-				int boostedVsLevel = boostedLevel - realLevel;
-				JsonObject object = new JsonObject();
-				object.addProperty("Skill", skill.getName());
-				object.addProperty("Level", realLevel);
-				object.addProperty("Boosted level", boostedLevel);
-				object.addProperty("Boosted amount", boostedVsLevel);
-				object.addProperty("XP", client.getSkillExperience(skill));
-				object.addProperty("XP gained", String.valueOf(xp_gained_skills[skill_count]));
-				skills.add(object);
-				skill_count++;
-			}
-
-			exchange.sendResponseHeaders(200, 0);
-			try (OutputStreamWriter out = new OutputStreamWriter(exchange.getResponseBody()))
-			{
-				RuneLiteAPI.GSON.toJson(skills, out);
-			}
-		}
-	}
-
-	public void handleEvents(HttpExchange exchange) throws IOException
-	{
-		synchronized (this) { // Ensure thread safety
-			Player player = client.getLocalPlayer();
-			Actor npc = player.getInteracting();
-			String npcName;
-			int npcHealth;
-			int npcHealth2;
-			int health;
-			int minHealth = 0;
-			int maxHealth = 0;
-			if (npc != null)
-			{
-				npcName = npc.getName();
-				npcHealth = npc.getHealthScale();
-				npcHealth2 = npc.getHealthRatio();
-				health = 0;
-				if (npcHealth2 > 0)
-				{
-					minHealth = 1;
-					if (npcHealth > 1)
-					{
-						if (npcHealth2 > 1)
-						{
-							minHealth = (npcHealth * (npcHealth2 - 1) + npcHealth - 2) / (npcHealth - 1);
-						}
-						maxHealth = (npcHealth * npcHealth2 - 1) / (npcHealth - 1);
-						if (maxHealth > npcHealth)
-						{
-							maxHealth = npcHealth;
-						}
-					}
-					else
-					{
-						// If healthScale is 1, healthRatio will always be 1 unless health = 0
-						// so we know nothing about the upper limit except that it can't be higher than maxHealth
-						maxHealth = npcHealth;
-					}
-					// Take the average of min and max possible healths
-					health = (minHealth + maxHealth + 1) / 2;
-				}
-			}
-			else
-			{
-				npcName = "null";
-				npcHealth = 0;
-				npcHealth2 = 0;
-				health = 0;
-			}
-			int energy = client.getEnergy();
-			int processedEnergy = energy != 0 ? energy / 100 : 0;
-			List<Integer> idlePoses = Arrays.asList(808, 813, 3418, 10075);
-			boolean isIdle = player.getAnimation() == -1 && idlePoses.contains(player.getPoseAnimation());
-			boolean loggedIn = client.getGameState() == GameState.LOGGED_IN;
-			JsonObject object = new JsonObject();
-			JsonObject camera = new JsonObject();
-			JsonObject worldPoint = new JsonObject();
-			JsonObject mouse = new JsonObject();
-			object.addProperty("Animation ID", player.getAnimation());
-			object.addProperty("Animation pose", player.getPoseAnimation());
-			object.addProperty("Idling", isIdle);
-			object.addProperty("Last chat message", msg);
-			object.addProperty("Run energy", processedEnergy);
-			object.addProperty("Game tick", client.getGameCycle());
-			object.addProperty("Logged in", loggedIn);
-			object.addProperty("Current health", client.getBoostedSkillLevel(Skill.HITPOINTS));
-			object.addProperty("Current prayer points", client.getBoostedSkillLevel(Skill.PRAYER));
-			object.addProperty("Current weight", client.getWeight());
-			object.addProperty("Interacting code", String.valueOf(player.getInteracting()));
-			object.addProperty("NPC name", npcName);
-			object.addProperty("NPC health ", minHealth);
-			mouse.addProperty("x", client.getMouseCanvasPosition().getX());
-			mouse.addProperty("y", client.getMouseCanvasPosition().getY());
-			worldPoint.addProperty("x", player.getWorldLocation().getX());
-			worldPoint.addProperty("y", player.getWorldLocation().getY());
-			worldPoint.addProperty("plane", player.getWorldLocation().getPlane());
-			worldPoint.addProperty("regionID", player.getWorldLocation().getRegionID());
-			worldPoint.addProperty("regionX", player.getWorldLocation().getRegionX());
-			worldPoint.addProperty("regionY", player.getWorldLocation().getRegionY());
-			camera.addProperty("yaw", client.getCameraYaw());
-			camera.addProperty("pitch", client.getCameraPitch());
-			camera.addProperty("x", client.getCameraX());
-			camera.addProperty("y", client.getCameraY());
-			camera.addProperty("z", client.getCameraZ());
-			object.add("worldPoint", worldPoint);
-			object.add("camera", camera);
-			object.add("mouse", mouse);
-			exchange.sendResponseHeaders(200, 0);
-			try (OutputStreamWriter out = new OutputStreamWriter(exchange.getResponseBody()))
-			{
-				RuneLiteAPI.GSON.toJson(object, out);
-			}
-		}
-	}
-
-	private void populateCurrentQuests()
-	{
-		clientThread.invokeLater(() -> {
-			lastQuestStates = new QuestState[quests.length];
-			for (int i = 0; i < quests.length; i++)
-			{
-				QuestState currentQuestState = quests[i].getState(client);
-				lastQuestStates[i] = currentQuestState;
-			}
-		});
-	}
-
-	private void detectQuestEvents()
-	{
-		clientThread.invokeLater(() -> {
-			for (int i = 0; i < quests.length; i++)
-			{
-				lastQuestStates[i] = quests[i].getState(client);
-			}
-		});
-	}
-
-	public void handleQuests(HttpExchange exchange) throws IOException
-	{
-		clientThread.invokeLater(() -> {
-			synchronized (this) { // Ensure thread safety
-				JsonArray questsArray = new JsonArray();
-				for (Quest quest : quests)
-				{
-					JsonObject questObject = new JsonObject();
-					questObject.addProperty("name", quest.getName());
-					QuestState state = quest.getState(client);
-					questObject.addProperty("state", state.name());
-					questsArray.add(questObject);
-				}
-
-				try {
-					exchange.sendResponseHeaders(200, 0);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-				try (OutputStreamWriter out = new OutputStreamWriter(exchange.getResponseBody()))
-				{
-					RuneLiteAPI.GSON.toJson(questsArray, out);
-				}
-				catch (IOException e)
-				{
-					log.error("Error writing quests response", e);
-				}
-			}
-		});
-	}
-
-	private HttpHandler handlerForInv(InventoryID inventoryID)
-	{
-		return exchange -> {
-			Item[] items = invokeAndWait(() -> {
-				ItemContainer itemContainer = client.getItemContainer(inventoryID);
-
-				if (itemContainer != null)
-				{
-					return itemContainer.getItems();
-				}
-				return null;
-			});
-
-			if (items == null)
-			{
-				exchange.sendResponseHeaders(204, 0);
-				return;
-			}
-
-			JsonArray jsonArray = new JsonArray();
-			for (Item item : items)
-			{
-				JsonObject jsonObject = new JsonObject();
-				jsonObject.addProperty("id", item.getId());
-				if (item.getId() != -1)
-				{
-					String itemName = invokeAndWait(() -> itemManager.getItemComposition(item.getId()).getName());
-					jsonObject.addProperty("name", itemName);
-				}
-				else
-				{
-					jsonObject.addProperty("name", "Unknown");
-				}
-				jsonObject.addProperty("quantity", item.getQuantity());
-				jsonArray.add(jsonObject);
-			}
-
-			exchange.sendResponseHeaders(200, 0);
-			try (OutputStreamWriter out = new OutputStreamWriter(exchange.getResponseBody()))
-			{
-				RuneLiteAPI.GSON.toJson(jsonArray, out);
-			}
-		};
-	}
-
-
-
-	private <T> T invokeAndWait(Callable<T> r)
-	{
-		try
-		{
-			AtomicReference<T> ref = new AtomicReference<>();
-			Semaphore semaphore = new Semaphore(0);
-			clientThread.invokeLater(() -> {
-				try
-				{
-					ref.set(r.call());
-				}
-				catch (Exception e)
-				{
-					throw new RuntimeException(e);
-				}
-				finally
-				{
-					semaphore.release();
-				}
-			});
-			semaphore.acquire();
-			return ref.get();
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException(e);
-		}
+	@Subscribe
+	public void onChatMessage(ChatMessage event) {
+		eventsContextHandler.onChatMessage(event);
 	}
 }
