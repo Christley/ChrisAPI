@@ -1,30 +1,29 @@
 package com.chrisapi;
 
 import net.runelite.api.Skill;
+
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 
 public class XpTracker {
 
-    private Map<Skill, ArrayList<Integer>> skillXpMap = new HashMap<>();
+    private final Map<Skill, ArrayList<Integer>> skillXpMap = new EnumMap<>(Skill.class);
+    private final ChrisAPIPlugin plugin;
 
-    private HttpServerPlugin httpPlugin;
-
-    public XpTracker(HttpServerPlugin httpPlugin) {
-        this.httpPlugin = httpPlugin;
+    public XpTracker(ChrisAPIPlugin plugin) {
+        this.plugin = plugin;
 
         // Initialize the skillXpMap with all skills
         for (Skill skill : Skill.values()) {
-            ArrayList<Integer> newXpList = new ArrayList<>();
-            skillXpMap.put(skill, newXpList);
+            skillXpMap.put(skill, new ArrayList<>());
         }
     }
 
     public void update() {
         for (Skill skill : Skill.values()) {
             ArrayList<Integer> xpListToUpdate = skillXpMap.get(skill);
-            int xpValueToAdd = httpPlugin.getClient().getSkillExperience(skill);
+            int xpValueToAdd = plugin.getClient().getSkillExperience(skill);
             xpListToUpdate.add(xpValueToAdd);
         }
     }

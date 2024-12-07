@@ -1,6 +1,5 @@
 package com.chrisapi;
 
-import com.chrisapi.HttpServerPlugin;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
 import com.sun.net.httpserver.HttpHandler;
@@ -8,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.GameTick;
-import net.runelite.client.callback.ClientThread;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.http.api.RuneLiteAPI;
 
 import java.io.IOException;
@@ -27,10 +26,12 @@ public class MiscStatsContextHandler extends BaseContextHandler {
     private int opponentHealthRatio = -1;
     private int opponentHealthScale = -1;
 
-    public MiscStatsContextHandler(HttpServerPlugin plugin) {
+    public MiscStatsContextHandler(ChrisAPIPlugin plugin) {
         super(plugin);
     }
 
+    @Subscribe
+    @Override
     public void onVarbitChanged(VarbitChanged varbitChanged) {
         int varpId = varbitChanged.getVarpId();
 
@@ -53,7 +54,7 @@ public class MiscStatsContextHandler extends BaseContextHandler {
             cannonPlaced = varbitChanged.getValue() == 4; // Assuming 4 means the cannon is placed
         }
     }
-
+    @Subscribe
     @Override
     public void onGameTick(GameTick tick) {
         collectAndCacheMiscStats();

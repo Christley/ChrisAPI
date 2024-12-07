@@ -4,18 +4,17 @@ import com.google.gson.JsonObject;
 import com.sun.net.httpserver.HttpHandler;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
-import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.util.Text;
 import net.runelite.http.api.RuneLiteAPI;
 
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,47 +26,48 @@ public class HerbSackContextHandler extends BaseContextHandler {
     private boolean gettingHerbs = false;
     private final List<String> herbsInChatMessage = new ArrayList<>();
     private final Map<Integer, Integer> herbCounts = new HashMap<>();
-    private long lastUpdatedTimestamp = 0; // Store timestamp in milliseconds
+    private long lastUpdatedTimestamp = 0;
     private boolean hasHerbSackInInventory = false;
 
-    public HerbSackContextHandler(HttpServerPlugin plugin) {
+    public HerbSackContextHandler(ChrisAPIPlugin plugin) {
         super(plugin);
     }
 
     @Override
-    public void onGameTick(GameTick event) {
-        clientThread.invoke(() -> {
-            synchronized (this) {
-                // Check if the herb sack is in inventory
-                boolean hasHerbSack = false;
-                ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
-                if (inventory != null) {
-                    Item[] items = inventory.getItems();
-                    if (items != null) {
-                        for (Item item : items) {
-                            if (item != null) {
-                                int itemId = item.getId();
-                                if (itemId == ItemID.HERB_SACK || itemId == ItemID.OPEN_HERB_SACK) {
-                                    hasHerbSack = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                hasHerbSackInInventory = hasHerbSack;
+    public void onVarbitChanged(VarbitChanged varbitChanged) {
 
-                if (gettingHerbs && !herbsInChatMessage.isEmpty()) {
-                    parseHerbChatMessages();
-                    gettingHerbs = false;
-                    herbsInChatMessage.clear();
-                }
-            }
-        });
     }
 
     @Subscribe
-    private void onMenuOptionClicked(MenuOptionClicked event) {
+    public void onGameTick(GameTick event) {
+        // Check if the herb sack is in inventory
+        boolean hasHerbSack = false;
+        ItemContainer inventory = client.getItemContainer(net.runelite.api.InventoryID.INVENTORY);
+        if (inventory != null) {
+            Item[] items = inventory.getItems();
+            if (items != null) {
+                for (Item item : items) {
+                    if (item != null) {
+                        int itemId = item.getId();
+                        if (itemId == ItemID.HERB_SACK || itemId == ItemID.OPEN_HERB_SACK) {
+                            hasHerbSack = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        hasHerbSackInInventory = hasHerbSack;
+
+        if (gettingHerbs && !herbsInChatMessage.isEmpty()) {
+            parseHerbChatMessages();
+            gettingHerbs = false;
+            herbsInChatMessage.clear();
+        }
+    }
+
+    @Subscribe
+    public void onMenuOptionClicked(MenuOptionClicked event) {
         if (!event.getMenuOption().equals("Check")
                 || (event.getItemId() != ItemID.HERB_SACK && event.getItemId() != ItemID.OPEN_HERB_SACK)) {
             return;
@@ -94,7 +94,7 @@ public class HerbSackContextHandler extends BaseContextHandler {
         if (messageString.equals("The herb sack is empty.")) {
             synchronized (this) {
                 herbCounts.clear();
-                lastUpdatedTimestamp = System.currentTimeMillis(); // Update timestamp
+                lastUpdatedTimestamp = System.currentTimeMillis();
                 gettingHerbs = false;
                 herbsInChatMessage.clear();
             }
@@ -124,13 +124,12 @@ public class HerbSackContextHandler extends BaseContextHandler {
 
         herbCounts.clear();
         herbCounts.putAll(newHerbCounts);
-        lastUpdatedTimestamp = System.currentTimeMillis(); // Update timestamp
+        lastUpdatedTimestamp = System.currentTimeMillis();
     }
 
     private int getHerbItemIdByName(String herbName) {
         // Map herb names to item IDs
         switch (herbName.toLowerCase()) {
-            case "grimy guam leaves":
             case "grimy guam leaf":
                 return ItemID.GRIMY_GUAM_LEAF;
             case "grimy marrentill":
@@ -211,7 +210,7 @@ public class HerbSackContextHandler extends BaseContextHandler {
     private Map<Integer, String> getHerbNames() {
         Map<Integer, String> herbNames = new HashMap<>();
         // Map item IDs to herb names
-        herbNames.put(ItemID.GRIMY_GUAM_LEAF, "Guam");
+        herbNames.put(ItemID.GRIMY_GUAM_LEAF, "grimy guam");
         herbNames.put(ItemID.GRIMY_MARRENTILL, "grimy marrentill");
         herbNames.put(ItemID.GRIMY_TARROMIN, "grimy tarromin");
         herbNames.put(ItemID.GRIMY_HARRALANDER, "grimy harralander");
